@@ -1,0 +1,9 @@
+services:
+  app:
+    build:
+      context: .
+    ports:
+      - published: 9655
+        target: 3000
+    env_file:
+      - .env
