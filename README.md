@@ -104,23 +104,31 @@ pnpm run start
 
 ## 🔗 Webhook 配置
 
-### GitLab Webhook 配置
+### 统一 Webhook 配置 (推荐)
 
+使用统一端点 `/webhook` 可以自动识别平台类型：
+
+**GitLab 项目配置:**
 1. 进入项目 → **Settings** → **Webhooks**
 2. 配置 Webhook：
-   - **URL**: `http://your-server:3000/webhook` 或 `http://your-server:3000/webhook/gitlab`
+   - **URL**: `http://your-server:3000/webhook`
    - **Secret token**: 与 `GITLAB_TOKEN` 相同
    - **Trigger**: 勾选 `Merge request events`
 
-### GitHub Webhook 配置
-
-1. 进入仓库 → **Settings** → **Webhooks**
-2. 点击 **Add webhook**
-3. 配置 Webhook：
-   - **Payload URL**: `http://your-server:3000/webhook` 或 `http://your-server:3000/webhook/github`
+**GitHub 仓库配置:**
+1. 进入仓库 → **Settings** → **Webhooks** → **Add webhook**
+2. 配置 Webhook：
+   - **Payload URL**: `http://your-server:3000/webhook`
    - **Content type**: `application/json`
    - **Secret**: 设置 Webhook 密钥 (对应 `GITHUB_WEBHOOK_SECRET`)
    - **Events**: 选择 `Pull requests`
+
+### 专用 Webhook 端点 (可选)
+
+如果需要明确指定平台，也可以使用专用端点：
+- GitLab: `http://your-server:3000/webhook/gitlab`
+- GitHub: `http://your-server:3000/webhook/github`
+- 向下兼容: `http://your-server:3000/` (仅 GitLab)
 
 ### 2. 本地测试 (使用 ngrok)
 
@@ -175,15 +183,24 @@ docker compose up -d
 
 ```
 src/
-├── app.ts                    # 应用入口
-├── config/                   # 配置文件
-├── prompt/                   # AI 提示模板
-└── routes/gitlab-webhook/    # GitLab Webhook 处理
-    ├── index.ts             # 主路由
-    ├── hookHandlers.ts      # 事件处理
-    ├── postAIReview.ts      # AI 审查发布
-    ├── services.ts          # 核心服务
-    └── types.ts             # 类型定义
+├── app.ts                     # 应用入口，统一配置和路由注册
+├── config/                    # 配置文件
+│   ├── index.ts              # AI 模型配置和类型定义
+│   └── errors.ts             # 错误处理配置
+├── prompt/                    # AI 提示模板
+│   └── index.ts              # 代码审查提示词和格式化
+├── services/                  # 核心服务层
+│   ├── aiClient.ts           # AI 客户端抽象层 (OpenAI/通义千问)
+│   └── platformClient.ts     # 平台客户端抽象层 (GitLab/GitHub)
+└── routes/                    # 路由处理
+    ├── webhook/              # 统一 Webhook 处理
+    │   └── index.ts          # 多平台 Webhook 路由
+    └── gitlab-webhook/       # GitLab 专用路由 (向下兼容)
+        ├── index.ts          # GitLab Webhook 主路由
+        ├── hookHandlers.ts   # GitLab 事件处理
+        ├── postAIReview.ts   # AI 审查结果发布
+        ├── services.ts       # GitLab 相关服务
+        └── types.ts          # GitLab 类型定义
 ```
 
 ## 🔧 支持的 AI 模型
